@@ -66,8 +66,10 @@ String sensorDataFile = "sensor_data.csv";
 String clockDriftFile = "clock_drift.csv";
 
 void setup() {
-
+    lcd.begin(16,2);
+    
     if (DEBUG) {
+        lcd.print("Debug Mode");
         // Open serial communications and wait for port to open:
         Serial.begin(9600);
         while (!Serial) {
@@ -85,6 +87,8 @@ void setup() {
             while (1);
         }
         Serial.println("SD card initialized.");
+        delay(1000);
+        lcd.clear();
     }
     // Check BME/SD card connection
     else if (!SD.begin(chipSelect) || !bme.begin()) {
@@ -109,6 +113,9 @@ void setup() {
     File fileIO = SD.open(clockDriftFile, FILE_WRITE);
     char key = keypad.getKey();
     while (!(key == '1'))  {
+        lcd.print("Recording drift");
+        lcd.setCursor(0,1);
+        lcd.print("Onboard vs. PPS");
         // If PPS interrupt flag set, write interrupt time to file
         if (interrupt_flag) {
             fileIO.println(String(interrupt_time) + ',');
@@ -118,10 +125,14 @@ void setup() {
     fileIO.close();
     // Remove PPS interrupt
     detachInterrupt(digitalPinToInterrupt(PPS_pin));
+    lcd.clear();
+    lcd.print("Running DAQ");
+    lcd.setCursor(0,1);
+    lcd.print("Hold * to stop");
 }
 
 void loop() {
-
+    
     // Read current time (convert to seconds)
     double test_time_float[20];
     String test_time[20];
@@ -189,6 +200,11 @@ void loop() {
             Serial.println("Error opening file: " + sensorDataFile);
         }
     }
-
-    //Serial.println("Time (s): " + testTime);
+    // A stopping condition.
+    char key = keypad.getKey();
+    if (key == '*') {
+      lcd.clear();
+      lcd.print("DAQ Halted");
+      while(1) {}
+      }
 }
